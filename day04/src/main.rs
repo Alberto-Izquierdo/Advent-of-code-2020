@@ -32,30 +32,22 @@ fn build_passport(map: &HashMap<String, String>) -> Option<Passport> {
             .filter(|value| *value >= 2020 && *value <= 2030)?,
         hgt: map
             .get("hgt")
-            .map(|height| {
-                height_regex.captures(height).map(|groups| {
-                    groups[1].parse::<u32>().ok().map(|value| match &groups[2] {
-                        "cm" => {
-                            if value < 150 || value > 193 {
-                                Err("Invalid height")
-                            } else {
-                                Ok(height)
-                            }
-                        }
-                        "in" => {
-                            if value < 59 || value > 76 {
-                                Err("Invalid height")
-                            } else {
-                                Ok(height)
-                            }
-                        }
-                        _ => {
-                            Err("Something terrible happened")
-                        }
+            .filter(|height| {
+                height_regex
+                    .captures(height)
+                    .filter(|groups| {
+                        groups[1]
+                            .parse::<u32>()
+                            .ok()
+                            .map(|value| match &groups[2] {
+                                "cm" => value >= 150 && value <= 193,
+                                "in" => value >= 59 && value <= 76,
+                                _ => false,
+                            })
+                            .unwrap_or(false)
                     })
-                })
-            })???
-            .ok()?
+                    .is_some()
+            })?
             .clone(),
         hcl: map
             .get("hcl")
