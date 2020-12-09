@@ -25,6 +25,23 @@ fn find_first_wrong_number(queue: VecDeque<usize>, preamble: usize) -> usize {
     }
 }
 
+fn find_consecutive_numbers_that_sum(queue: VecDeque<usize>, sum: usize) -> Vec<usize> {
+    let mut current_sum = 0;
+    let result: Vec<usize> = queue
+        .clone()
+        .into_iter()
+        .take_while(|value| {
+            current_sum += *value;
+            current_sum < sum
+        })
+        .collect();
+    if current_sum == sum {
+        result
+    } else {
+        find_consecutive_numbers_that_sum(queue.into_iter().skip(1).collect(), sum)
+    }
+}
+
 fn main() {
     let lines: VecDeque<usize> = BufReader::new(File::open("input.txt").unwrap())
         .lines()
@@ -32,4 +49,9 @@ fn main() {
         .collect();
     let result = find_first_wrong_number(lines.clone(), 25);
     println!("Result: {}", result);
+    let result = find_consecutive_numbers_that_sum(lines, result);
+    println!(
+        "result: {}",
+        result.clone().iter().min().unwrap() + result.iter().max().unwrap()
+    );
 }
