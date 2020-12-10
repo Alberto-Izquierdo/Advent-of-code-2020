@@ -14,7 +14,7 @@ fn does_queue_contain_sum(queue: &VecDeque<usize>, sum: usize) -> bool {
 }
 
 fn find_first_wrong_number(queue: VecDeque<usize>, preamble: usize) -> usize {
-    let value = queue.get(preamble).unwrap().clone();
+    let value = *queue.get(preamble).unwrap();
 
     match does_queue_contain_sum(&queue, value) {
         false => value,
@@ -28,12 +28,12 @@ fn find_first_wrong_number(queue: VecDeque<usize>, preamble: usize) -> usize {
 fn find_consecutive_numbers_that_sum(queue: VecDeque<usize>, sum: usize) -> Vec<usize> {
     let mut current_sum = 0;
     let result: Vec<usize> = queue
-        .clone()
-        .into_iter()
+        .iter()
         .take_while(|value| {
             current_sum += *value;
             current_sum < sum
         })
+        .map(|value| *value)
         .collect();
     if current_sum == sum {
         result
@@ -52,6 +52,6 @@ fn main() {
     let result = find_consecutive_numbers_that_sum(lines, result);
     println!(
         "result: {}",
-        result.clone().iter().min().unwrap() + result.iter().max().unwrap()
+        result.iter().min().unwrap() + result.iter().max().unwrap()
     );
 }
