@@ -13,8 +13,7 @@ fn get_jolt_differences(input: BTreeSet<usize>) -> JoltDifferences {
     input.into_iter().fold(
         JoltDifferences {
             one_jolt: 0,
-            // The 1 represents the built-in joltage adapter (which is always 3 higher than the higher number)
-            three_jolt: 1,
+            three_jolt: 0,
         },
         |acc, current_jolt| {
             let prev_tmp = previous_jolt;
@@ -39,6 +38,8 @@ fn main() {
         .lines()
         .map(|value| value.unwrap().parse::<usize>().unwrap())
         .collect();
+    let last = *input.iter().last().unwrap();
+    let input = input.into_iter().chain(std::iter::once(last + 3)).collect();
     let jolt_differences = get_jolt_differences(input);
     println!("{:?}", jolt_differences);
     println!(
