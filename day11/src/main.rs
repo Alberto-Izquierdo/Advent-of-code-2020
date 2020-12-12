@@ -8,6 +8,45 @@ enum State {
     Occupied,
 }
 
+fn is_position_valid(seats: &Vec<Vec<State>>, x: i32, y: i32) -> bool {
+    let len_x = seats.get(0).unwrap().len();
+    let len_y = seats.len();
+    x >= 0 && x < len_x as i32 && y >= 0 && y < len_y as i32
+}
+
+fn get_occupied_seats_in_all_directions(seats: &Vec<Vec<State>>, x: i32, y: i32) -> u32 {
+    let directions = vec![
+        (-1, -1), // TOP LEFT
+        (0, -1),  // TOP CENTER
+        (1, -1),  // TOP RIGHT
+        (1, 0),   // MIDDLE RIGHT
+        (1, 1),   // BOTTOM RIGHT
+        (0, 1),   // BOTTOM CENTER
+        (-1, 1),  // BOTTOM LEFT
+        (-1, 0),  // MIDDLE LEFT
+    ];
+    let mut result = 0;
+    for direction in directions {
+        for iteration in 1.. {
+            let current_position = (x + direction.0 * iteration, y + direction.1 * iteration);
+            if is_position_valid(seats, current_position.0, current_position.1) {
+                match seats[current_position.1 as usize][current_position.0 as usize] {
+                    State::Occupied => {
+                        result += 1;
+                        break;
+                    }
+                    State::Empty => break,
+                    State::Floor => {}
+                }
+            } else {
+                break;
+            }
+        }
+    }
+    result
+}
+
+#[allow(dead_code)]
 fn get_adjacent_occupied_seats(seats: &Vec<Vec<State>>, x: i32, y: i32) -> u32 {
     let len_x = seats.get(0).unwrap().len();
     let len_y = seats.len();
@@ -30,7 +69,7 @@ fn step_one_callback(input: &Vec<Vec<State>>, x: usize, y: usize) -> State {
         State::Floor => State::Floor,
         State::Occupied => State::Occupied,
         State::Empty => {
-            if get_adjacent_occupied_seats(&input, x as i32, y as i32) == 0 {
+            if get_occupied_seats_in_all_directions(&input, x as i32, y as i32) == 0 {
                 State::Occupied
             } else {
                 State::Empty
@@ -44,7 +83,7 @@ fn step_two_callback(input: &Vec<Vec<State>>, x: usize, y: usize) -> State {
     match seat {
         State::Floor => State::Floor,
         State::Occupied => {
-            if get_adjacent_occupied_seats(&input, x as i32, y as i32) >= 4 {
+            if get_occupied_seats_in_all_directions(&input, x as i32, y as i32) >= 5 {
                 State::Empty
             } else {
                 State::Occupied
