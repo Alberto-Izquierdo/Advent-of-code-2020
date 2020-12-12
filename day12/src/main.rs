@@ -26,25 +26,6 @@ impl CardinalDirection {
         }
     }
 
-    fn add(self, value: i32) -> CardinalDirection {
-        let directions = vec![
-            CardinalDirection::NORTH,
-            CardinalDirection::EAST,
-            CardinalDirection::SOUTH,
-            CardinalDirection::WEST,
-        ];
-        let previous_index = directions
-            .iter()
-            .position(|direction| *direction == self)
-            .unwrap() as i32;
-        let new_index = (previous_index + value) % 4;
-        directions[if new_index < 0 {
-            (new_index + 4) as usize
-        } else {
-            new_index as usize
-        }]
-    }
-
     fn get_direction(&self) -> (i32, i32) {
         match self {
             CardinalDirection::NORTH => (0, 1),
@@ -57,63 +38,88 @@ impl CardinalDirection {
 
 #[derive(Debug)]
 struct Ship {
-    facing: CardinalDirection,
     position: (i32, i32),
+    waypoint_position: (i32, i32),
 }
 
 impl Ship {
     fn new() -> Ship {
         Ship {
-            facing: CardinalDirection::EAST,
             position: (0, 0),
-        }
-    }
-
-    fn set_facing(self, direction: CardinalDirection) -> Ship {
-        Ship {
-            facing: direction,
-            position: self.position,
+            waypoint_position: (10, 1),
         }
     }
 
     fn set_position(self, position: (i32, i32)) -> Ship {
         Ship {
-            facing: self.facing,
             position,
+            waypoint_position: self.waypoint_position,
         }
     }
 
-    fn turn(self, degrees: i32) -> Ship {
-        let new_cardinal_direction = self.facing.add(degrees / 90);
-        self.set_facing(new_cardinal_direction)
+    fn set_waypoint_position(self, waypoint_position: (i32, i32)) -> Ship {
+        Ship {
+            position: self.position,
+            waypoint_position,
+        }
     }
 
-    fn move_in_direction(self, cardinal_direction: CardinalDirection, distance: u32) -> Ship {
+    fn move_waypoint_in_direction(
+        self,
+        cardinal_direction: CardinalDirection,
+        distance: u32,
+    ) -> Ship {
         let direction = cardinal_direction.get_direction();
-        let previous_position = self.position;
-        self.set_position((
+        let previous_position = self.waypoint_position;
+        self.set_waypoint_position((
             previous_position.0 + direction.0 * distance as i32,
             previous_position.1 + direction.1 * distance as i32,
         ))
     }
 
-    fn move_forward(self, distance: u32) -> Ship {
-        let facing = self.facing;
-        self.move_in_direction(facing, distance)
+    fn move_towards_waypoint(self, distance: u32) -> Ship {
+        let distance = (
+            self.waypoint_position.0 * distance as i32,
+            self.waypoint_position.1 * distance as i32,
+        );
+        let new_position = (self.position.0 + distance.0, self.position.1 + distance.1);
+        self.set_position(new_position)
+    }
+
+    fn turn(self, degrees: i32) -> Ship {
+        let degrees = if degrees >= 0 {
+            degrees % 360
+        } else {
+            (degrees % 360) + 360
+        } as u32;
+        let (cos, sin) = match degrees {
+            0 => (1, 0),
+            90 => (0, 1),
+            180 => (-1, 0),
+            270 => (0, -1),
+            _ => panic!(),
+        };
+        let new_waypoint_position = (
+            cos * self.waypoint_position.0 - sin * self.waypoint_position.1,
+            cos * self.waypoint_position.1 + sin * self.waypoint_position.0,
+        );
+        self.set_waypoint_position((new_waypoint_position.0, new_waypoint_position.0))
     }
 
     fn apply_action(self, action: Action) -> Ship {
         match action.action {
-            'L' => self.turn(-(action.times as i32)),
-            'R' => self.turn(action.times as i32),
-            'F' => self.move_forward(action.times),
-            _ => self.move_in_direction(CardinalDirection::new(action.action), action.times),
+            'L' => self.turn(action.times as i32),
+            'R' => self.turn(-(action.times as i32)),
+            'F' => self.move_towards_waypoint(action.times),
+            _ => {
+                self.move_waypoint_in_direction(CardinalDirection::new(action.action), action.times)
+            }
         }
     }
 }
 
 fn main() {
-    let directions: Vec<Action> = BufReader::new(File::open("input_test.txt").unwrap())
+    let directions: Vec<Action> = BufReader::new(File::open("input.txt").unwrap())
         .lines()
         .map(|value| {
             let chars = value.unwrap();
@@ -124,9 +130,9 @@ fn main() {
             }
         })
         .collect();
-    let final_state = directions.into_iter().fold(Ship::new(), |ship, action| {
-        ship.apply_action(action)
-    });
+    let final_state = directions
+        .into_iter()
+        .fold(Ship::new(), |ship, action| ship.apply_action(action));
     println!("Final ship state: {:?}", final_state);
     println!(
         "Result: {}",
