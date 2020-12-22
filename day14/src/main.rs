@@ -47,27 +47,9 @@ fn part_1(lines: Lines<BufReader<File>>) -> i64 {
     values.iter().map(|(_, value)| *value).sum::<i64>()
 }
 
-fn get_masks(mask: &str) -> Vec<String> {
+fn get_memory_addresses(original_address: &str, mask: &str) -> Vec<i64> {
     if mask.contains("X") {
         let mut masks = mask.splitn(2, "X");
-        let first_part = masks.next().unwrap();
-        let second_part = masks.next().unwrap();
-        let first = String::from(first_part) + "0" + second_part;
-        let first = get_masks(first.as_str());
-        let second = String::from(first_part) + "1" + second_part;
-        let second = get_masks(second.as_str());
-        first
-            .into_iter()
-            .chain(second.into_iter())
-            .collect::<Vec<String>>()
-    } else {
-        vec![mask.to_string()]
-    }
-}
-
-fn get_memory_addresses(original_address: &str, mask: &str) -> Vec<String> {
-    if mask.contains("X") {
-        let masks = mask.splitn(2, "X");
         let first_part = masks.next().unwrap();
         let second_part = masks.next().unwrap();
         let new_mask = format!("{}0{}", first_part, second_part);
@@ -88,27 +70,33 @@ fn get_memory_addresses(original_address: &str, mask: &str) -> Vec<String> {
             .chain(get_memory_addresses(second.as_str(), new_mask.as_str()))
             .collect::<Vec<_>>()
     } else {
-        // TODO
-        vec![]
+        let mask_int = i64::from_str_radix(mask, 2).unwrap();
+        let address_int = i64::from_str_radix(original_address, 2).unwrap();
+        vec![mask_int | address_int]
     }
 }
 
 fn part_2(lines: Lines<BufReader<File>>) -> i64 {
-    let mut mask;
+    let mut mask = String::from("");
     let mut values: HashMap<i64, i64> = HashMap::new();
     for line in lines {
-        let line = line.unwrap();
-        if line.starts_with("mask") {
-            mask = line.split(" = ").skip(1).next().unwrap();
-        } else if line.starts_with("mem") {
-            let number = line
+        let line_unwrapped = line.unwrap();
+        if line_unwrapped.starts_with("mask") {
+            mask = line_unwrapped
+                .split(" = ")
+                .skip(1)
+                .next()
+                .unwrap()
+                .to_string();
+        } else if line_unwrapped.starts_with("mem") {
+            let number = line_unwrapped
                 .split(" = ")
                 .skip(1)
                 .next()
                 .unwrap()
                 .parse::<i64>()
                 .unwrap();
-            let memory_address = line
+            let memory_address = line_unwrapped
                 .split("[")
                 .skip(1)
                 .next()
@@ -118,18 +106,21 @@ fn part_2(lines: Lines<BufReader<File>>) -> i64 {
                 .unwrap()
                 .parse::<i64>()
                 .unwrap();
-            let memory_address = format!("{:036b}", memory_address);
-            //values.insert(memory_address, number);
+            let memory_addresses =
+                get_memory_addresses(format!("{:036b}", memory_address).as_str(), mask.as_str());
+            for address in memory_addresses {
+                values.insert(address, number);
+            }
         } else {
             panic!("Line not valid");
         }
     }
-    0
+    values.iter().map(|(_, value)| *value).sum::<i64>()
 }
 
 fn main() {
     let lines = BufReader::new(File::open("input.txt").unwrap()).lines();
     println!("Part 1 result: {}", part_1(lines));
-    let lines = BufReader::new(File::open("input_test2.txt").unwrap()).lines();
+    let lines = BufReader::new(File::open("input.txt").unwrap()).lines();
     println!("Part 2 result: {}", part_2(lines));
 }
