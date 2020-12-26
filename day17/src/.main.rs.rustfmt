@@ -1,0 +1,44 @@
+use std::collections::HashSet;
+use std::fs::File;
+use std::io::{prelude::*, BufReader};
+
+#[derive(Debug)]
+struct Scene {
+    data: HashSet<(i32, i32, i32)>,
+    x_limits: (i32, i32),
+    y_limits: (i32, i32),
+    z_limits: (i32, i32),
+}
+
+impl Scene {
+    fn new(active_positions: Vec<(i32, i32)>) -> Scene {
+        let limits = active_positions.iter().fold(((0, 0), (0, 0)), |acc, current_value| 
+            ((i32::min(acc.0.0,current_value.0), i32::max(acc.0.1, current_value.0)),
+            (i32::min(acc.1.0, current_value.1), i32::max(acc.1.1, current_value.1)))
+        );
+        Scene {
+            data: active_positions
+                .iter()
+                .map(|pair| (pair.0, pair.1, 0))
+                .collect::<HashSet<_>>(),
+            x_limits: limits.0,
+            y_limits: limits.1,
+            z_limits: (0, 0),
+        }
+    }
+}
+
+fn main() {
+    let values = BufReader::new(File::open("input_test.txt").unwrap())
+        .lines()
+        .map(|value| value.unwrap())
+        .enumerate()
+        .fold(vec![], |acc, (y, current_line)| {
+            acc.into_iter().chain(
+            current_line.chars().enumerate().filter(|(_, current_char)| {
+                *current_char == '#'
+            }).map(|(x, _)| (x as i32, y as i32))).collect::<Vec<_>>()
+        });
+    let scene = Scene::new(values);
+    println!("{:?}", scene);
+}
