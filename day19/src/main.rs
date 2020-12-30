@@ -23,14 +23,72 @@ fn main() {
         .map(|line| line.unwrap())
         .collect::<Vec<String>>();
     let result = part_1(&lines);
-    println!("Result: {}", result);
+    println!("Part 1 result: {}", result);
+    let result = part_2(&lines);
+    println!("Part 2 result: {}", result);
 }
 
 fn part_1(lines: &Vec<String>) -> u32 {
     let rules = parse_rules(lines);
     let built_strings = build_strings_from_rules(&rules);
     let parsed_messages = parse_messages(lines);
-    parsed_messages.into_iter().filter(|message| built_strings.contains(message)).count() as u32
+    parsed_messages
+        .into_iter()
+        .filter(|message| built_strings.contains(message))
+        .count() as u32
+}
+
+fn part_2(lines: &Vec<String>) -> u32 {
+    let rules = parse_rules(lines);
+    let built_strings = build_strings_from_rules(&rules);
+    let parsed_messages = parse_messages(lines);
+    // These are the strings that can be looped
+    let strings_42 = build_strings_from_rule(rules.get(&42).unwrap(), &rules);
+    let strings_31 = build_strings_from_rule(rules.get(&31).unwrap(), &rules);
+    parsed_messages
+        .into_iter()
+        .filter(|message| {
+            built_strings.contains(message) || check_loops(&message, &strings_42, &strings_31)
+        })
+        .count() as u32
+}
+
+fn check_loops(
+    message: &str,
+    beggining_patterns: &Vec<String>,
+    ending_patterns: &Vec<String>,
+) -> bool {
+    let mut message = message;
+    let mut ending_matches = 0;
+    let mut begining_matches = 0;
+    loop {
+        match ending_patterns
+            .into_iter()
+            .find(|string| message.ends_with(*string))
+        {
+            Some(string) => {
+                message = message.split_at(message.len() - string.len()).0;
+                ending_matches += 1;
+            }
+            None => break,
+        }
+    }
+    if ending_matches == 0 {
+        return false;
+    }
+    loop {
+        match beggining_patterns
+            .into_iter()
+            .find(|string| message.starts_with(*string))
+        {
+            Some(string) => {
+                message = message.split_at(string.len()).1;
+                begining_matches += 1;
+            }
+            None => break,
+        }
+    }
+    begining_matches > ending_matches && message.is_empty()
 }
 
 fn parse_messages(lines: &Vec<String>) -> Vec<String> {
