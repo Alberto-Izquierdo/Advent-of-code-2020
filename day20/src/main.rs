@@ -39,7 +39,21 @@ impl Tile {
         } else {
             (self.width - 1) - y
         };
-        self.data[x + y * self.width]
+        let final_x = match self.rotation_degrees {
+            0 => x,
+            90 => (y),
+            180 => (self.width - 1 - x),
+            270 => (self.width - 1 - y),
+            _ => panic!("Wrong rotation")
+        };
+        let final_y = match self.rotation_degrees {
+            0 => y,
+            90 => (self.width - 1 - x),
+            180 => (self.width - 1 - y),
+            270 => (x),
+            _ => panic!("Wrong rotation")
+        };
+        self.data[final_x + final_y * self.width]
     }
 
     fn flip_x(&mut self) {
