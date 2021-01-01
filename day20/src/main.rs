@@ -29,7 +29,30 @@ impl Tile {
     }
 
     fn get_value(&self, x: usize, y: usize) -> bool {
+        let x = if !self.flipped.0 {
+            x
+        } else {
+            (self.width - 1) - x
+        };
+        let y = if !self.flipped.1 {
+            y
+        } else {
+            (self.width - 1) - y
+        };
         self.data[x + y * self.width]
+    }
+
+    fn flip_x(&mut self) {
+        self.flipped.0 = !self.flipped.0;
+    }
+
+    fn flip_y(&mut self) {
+        self.flipped.1 = !self.flipped.1;
+    }
+
+    fn rotate_right(&mut self) {
+        let new_rotation = (self.rotation_degrees + 90) % 360;
+        self.rotation_degrees = new_rotation;
     }
 }
 
