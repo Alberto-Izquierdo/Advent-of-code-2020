@@ -16,6 +16,14 @@ struct Tile {
     position: Option<(i32, i32)>,
 }
 
+#[derive(Debug)]
+enum Direction {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+}
+
 impl Tile {
     fn new(id: &str) -> Self {
         Tile {
@@ -44,14 +52,14 @@ impl Tile {
             90 => (y),
             180 => (self.width - 1 - x),
             270 => (self.width - 1 - y),
-            _ => panic!("Wrong rotation")
+            _ => panic!("Wrong rotation"),
         };
         let final_y = match self.rotation_degrees {
             0 => y,
             90 => (self.width - 1 - x),
             180 => (self.width - 1 - y),
             270 => (x),
-            _ => panic!("Wrong rotation")
+            _ => panic!("Wrong rotation"),
         };
         self.data[final_x + final_y * self.width]
     }
@@ -122,4 +130,29 @@ fn load_tiles(lines: &Vec<String>) -> Vec<Tile> {
         }
         tiles
     })
+}
+
+fn are_tiles_connected(lhs: &Tile, rhs: &Tile) -> Option<Vec<Direction>> {
+    let mut result = vec![];
+    // UP
+    if (0..lhs.width).all(|x| lhs.get_value(x, 0) == rhs.get_value(x, rhs.width - 1)) {
+        result.push(Direction::UP);
+    }
+    // DOWN
+    if (0..lhs.width).all(|x| lhs.get_value(x, rhs.width - 1) == rhs.get_value(x, 0)) {
+        result.push(Direction::DOWN);
+    }
+    // LEFT
+    if (0..lhs.width).all(|y| lhs.get_value(0, y) == rhs.get_value(rhs.width - 1, y)) {
+        result.push(Direction::LEFT);
+    }
+    // RIGHT
+    if (0..lhs.width).all(|y| lhs.get_value(rhs.width - 1, y) == rhs.get_value(0, y)) {
+        result.push(Direction::RIGHT);
+    }
+    if !result.is_empty() {
+        Some(result)
+    } else {
+        None
+    }
 }
